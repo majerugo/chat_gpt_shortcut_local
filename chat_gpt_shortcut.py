@@ -5,8 +5,6 @@ import subprocess
 import argparse
 import threading
 
-
-
 def sumarrize(msg, file, text):
     """
     Summarize the text and put it in the file
@@ -154,8 +152,6 @@ def put_histo_in_file(histo, file):
             f.write("A: " + msg["content"])
     f.close()
 
-
-
 # Create the file and the history
 file = "conversations/conversation.txt"
 histo = [{"role": "system", "content": "You are an engineer in computer science."}]
@@ -163,12 +159,15 @@ histo = [{"role": "system", "content": "You are an engineer in computer science.
 # Verbose mode
 verbose = False
 
+# Parse the arguments
 parser = argparse.ArgumentParser(description='Shortcut for GPT-3')
 parser.add_argument('--histo', help='Take a file as input and use it as history')
 parser.add_argument('-v', '--verbose', action='store_true', help='Verbose mode')
 parser.add_argument('--api_key','-k', help='OpenAI API key')
 
 args = parser.parse_args()
+
+# Get history from file
 if args.histo:
     file = args.histo
     histo = parse_file_to_histo(args.histo)
@@ -178,9 +177,11 @@ else:
         f.write("S: You are an engineer in computer science.")
         f.close()
 
+# Verbose mode
 if args.verbose:
     verbose = True
 
+# Create the client
 if args.api_key:
     client = OpenAI(api_key=args.api_key)
 else:
