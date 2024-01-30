@@ -85,6 +85,7 @@ def put_text_in_clipboard(output):
     process2 = subprocess.Popen(cmd2, stdin=process1.stdout, stdout=subprocess.PIPE)
     
     process1.stdout.close()
+    print("Text copied to clipboard")
 
 def on_key_event(e):
     """
@@ -154,8 +155,6 @@ def put_histo_in_file(histo, file):
     f.close()
 
 
-# Create the client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Create the file and the history
 file = "conversations/conversation.txt"
@@ -167,6 +166,7 @@ verbose = False
 parser = argparse.ArgumentParser(description='Shortcut for GPT-3')
 parser.add_argument('--histo', help='Take a file as input and use it as history')
 parser.add_argument('-v', '--verbose', action='store_true', help='Verbose mode')
+parser.add_argument('--api_key','-k', help='OpenAI API key')
 
 args = parser.parse_args()
 if args.histo:
@@ -177,8 +177,14 @@ else:
         f = open(file, "w")
         f.write("S: You are an engineer in computer science.")
         f.close()
+
 if args.verbose:
     verbose = True
+
+if args.api_key:
+    client = OpenAI(api_key=args.api_key)
+else:
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 print("Press ctrl+alt+a to send the selected text to GPT-3")
 
