@@ -1,89 +1,113 @@
+from conversation_logger import parse_file_to_histo, sumarrize
+from output_manager import put_text_in_clipboard, display_new_response
+from input_manager import get_selected_text
+
 import os
 from openai import OpenAI
 import keyboard
-import subprocess
 import argparse
 import threading
+import tkinter as tk
+from tkhtmlview import HTMLText
+from bs4 import BeautifulSoup
 
-def sumarrize(msg, file, text):
-    """
-    Summarize the text and put it in the file
-    args:
-        msg: the history of the chat
-        file: the file where the history is stored
-        text: the text to summarize
-    """
+window = None
 
-    # Create request for GPT-3
-    summary = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "system", "content": "sums it up:" + text}]
-    )
-    if (verbose):
-        print("Summary:", summary.choices[0].message.content)
-    msg.append({"role":"assistant", "content": summary.choices[0].message.content})
-    put_histo_in_file(msg, file)
+class HTMLViewerApp:
+    def __init__(self, root, file):
+        self.root = root
+        self.file = file
+        self.root.title("GPT answer")
 
-def send_request(text):
+       # Set background colors for Ubuntu-like terminal theme
+        bg_color = "#2C001E"  # Dark purple background
+        text_bg_color = "#2C001E"  # Dark purple background
+        button_bg_color = "#4CAF50"  # Ubuntu-like green
+
+        # Set text color for Ubuntu-like terminal theme
+        text_color = "#D3D3D3"  # Light gray text
+        input_color = "#E6E6FA"  # Light lavender input background
+
+        # Configure root window
+        root.configure(bg=bg_color)
+
+        # Create an HTMLText widget for displaying HTML content
+        self.html_text = HTMLText(root, wrap=tk.WORD, bg=text_bg_color, fg=text_color, insertbackground=text_color, highlightthickness=0)
+        self.html_text.pack(expand=True, fill="both", padx=10, pady=10)
+
+        # Create a frame for the text entry and button
+        input_frame = tk.Frame(root, bg=bg_color)
+        input_frame.pack(fill="x", side=tk.BOTTOM)
+
+        # Create a text entry widget
+        self.text_entry = tk.Entry(input_frame, bg=input_color, fg="black", highlightbackground=bg_color, highlightcolor=bg_color, font=('Helvetica', 14))
+        self.text_entry.pack(side=tk.LEFT, expand=True, fill="both", padx=5)
+
+        # Bind the <Return> event to the send_request function
+        self.text_entry.bind("<Return>", lambda event: self.send_request())
+
+        # Create a button to send the request with reduced vertical padding
+        self.send_button = tk.Button(input_frame, text="Send request", command=self.send_request, bg=button_bg_color, fg="white", pady=5)
+        self.send_button.pack(side=tk.RIGHT, expand=False, fill="both", padx=5)
+
+        # Load initial HTML content from file
+        self.load_html_content()
+
+    def load_html_content(self):
+        try:
+            with open(self.file, "r", encoding="utf-8") as f:
+                text = f.read()
+                styled_html = f'<div style="background-color: #2C001E; color: #D3D3D3;">{text}</div>'
+                # Parse HTML and modify <h5> text color
+                
+                soup = BeautifulSoup(styled_html, "html.parser")
+                h5_tags = soup.find_all("h5")
+                for h5_tag in h5_tags:
+                    h5_tag["style"] = "color: green;"  # Change color to red
+                modified_html = str(soup)
+                self.html_text.set_html(modified_html)
+                # Set the vertical scrollbar to the bottom position
+                self.html_text.yview(tk.END)
+        except FileNotFoundError:
+            print(f"File not found: {self.file}")
+    def send_request(self):
+        # Get the text from the entry
+        text = self.text_entry.get()
+        self.text_entry.delete(0, tk.END)
+        send_request_and_save(text)
+
+
+def send_request_and_save(text):
     """
     Send a request to GPT-3
     args:
         text: the text to send to GPT-3
-    return:
-        (the response of GPT-3, the history of the chat)
     """
 
     # Take history from file
-    msg = parse_file_to_histo(file)
-
+    histo_parse = parse_file_to_histo(file)
     # Create request for GPT-3
-    msg.append({"role": "user", "content": text})
-
+    histo_parse.append({"role": "user", "content": text})
+        
     completion = client.chat.completions.create(
         model="gpt-3.5-turbo",
-        messages=msg
+        messages=histo_parse
     )
     if (verbose):
         print("Completion:", completion.choices[0].message.content)
-    return (completion.choices[0].message.content, msg)
-
-def get_selected_text():
-    """
-    Get the selected text in the clipboard
-    return:
-        the selected text
-    """
-
-    # Take the content of the clipboard and put it in a file
-    f = open("/tmp/clipboard.txt", "w")
-    subprocess.run(["xclip", "-selection", "clipboard", "-o"], stdout=f)
-    f.close()
-
-    # Read the content of this file
-    f = open("/tmp/clipboard.txt", "r")
-    selected_text = f.read()
-    f.close()
-
-    # Delete the file
-    subprocess.run(["rm", "/tmp/clipboard.txt"])
-    return selected_text
-
-def put_text_in_clipboard(output):
-    """
-    Put the text in the clipboard
-    args:
-        output: the text to put in the clipboard
-    """
-
-    # echo $text | xclip -selection clipboard
-    cmd1 = ["echo", output]
-    process1 = subprocess.Popen(cmd1, stdout=subprocess.PIPE)
-
-    cmd2 = ["xclip", "-selection", "clipboard"]
-    process2 = subprocess.Popen(cmd2, stdin=process1.stdout, stdout=subprocess.PIPE)
-    
-    process1.stdout.close()
-    print("Text copied to clipboard")
+    output,histo_parse = (completion.choices[0].message.content, histo_parse)
+    global window
+    if clipboard:
+        put_text_in_clipboard(output)
+        sumarrize(histo_parse, file, output, verbose, client)
+    else:
+        f = display_new_response(output, histo_parse, file)
+        sumarrize(histo_parse, file, output, verbose, client)
+        if (window != None and window.winfo_exists()):
+            window.destroy()
+        window = tk.Tk()
+        app = HTMLViewerApp(window, f)
+        window.mainloop()
 
 def on_key_event(e):
     """
@@ -100,57 +124,8 @@ def on_key_event(e):
                 print("Texte sélectionné :", selected_text)
             else:
                 print("Aucun texte sélectionné")
-        output,msg = send_request(selected_text)
-
-        thread = threading.Thread(target=sumarrize, args=(msg, file, output))
-        thread1 = threading.Thread(target=put_text_in_clipboard, args=(output,))
-
-        thread.start()
-        thread1.start()
-
-        thread.join()
-        thread1.join()
-
-def parse_file_to_histo(file):
-    """
-    Parse the file to get the history of the chat
-    args:
-        file: the file to parse
-    return:
-        the history of the chat
-    """
-
-    f = open(file, "r")
-    lines = f.readlines()
-    f.close()
-
-    histo = []
-    for line in lines:
-        if line[0] == "S":
-            histo.append({"role": "system", "content": line[2:]})
-        elif line[0] == "U":
-            histo.append({"role": "user", "content": line[2:]})
-        elif line[0] == "A":
-            histo.append({"role": "assistant", "content": line[2:]})
-    return histo
-
-def put_histo_in_file(histo, file):
-    """
-    Put the history of the chat in the file
-    args:
-        histo: the history of the chat
-        file: the file where to put the history
-    """
-
-    f = open(file, "w")
-    for msg in histo:
-        if msg["role"] == "system":
-            f.write("S: " + msg["content"])
-        elif msg["role"] == "user":
-            f.write("U: " + msg["content"])
-        elif msg["role"] == "assistant":
-            f.write("A: " + msg["content"])
-    f.close()
+        if selected_text:
+            send_request_and_save(selected_text)
 
 # Create the file and the history
 file = "conversations/conversation.txt"
@@ -159,11 +134,15 @@ histo = [{"role": "system", "content": "You are an engineer in computer science.
 # Verbose mode
 verbose = False
 
+# Output in clipboard
+clipboard = False
+
 # Parse the arguments
 parser = argparse.ArgumentParser(description='Shortcut for GPT-3')
-parser.add_argument('--histo', help='Take a file as input and use it as history')
-parser.add_argument('-v', '--verbose', action='store_true', help='Verbose mode')
 parser.add_argument('--api_key','-k', help='OpenAI API key')
+parser.add_argument('--histo', help='Take a file as input and use it as history')
+parser.add_argument('--verbose','-v', action='store_true', help='Verbose mode')
+parser.add_argument('--clipboard', '-c', action='store_true', help='Save the output in the clipboard')
 
 args = parser.parse_args()
 
@@ -172,14 +151,17 @@ if args.histo:
     file = args.histo
     histo = parse_file_to_histo(args.histo)
 else:
-    if not os.path.exists(file):
-        f = open(file, "w")
-        f.write("S: You are an engineer in computer science.")
-        f.close()
+    f = open(file, "w")
+    f.write("S: You are an engineer in computer science.\n")
+    f.close()
 
 # Verbose mode
 if args.verbose:
     verbose = True
+
+# Output in clipboard
+if args.clipboard:
+    clipboard = True
 
 # Create the client
 if args.api_key:

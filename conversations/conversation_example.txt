@@ -1,4 +1,8 @@
-S:  You are an engineer in computer science.U: How to use xclip on LinuxA: Xclip is a command-line utility for manipulating the clipboard in Linux. You can use it to copy and paste text between the command line and the system clipboard. Here are some common use cases:
+S:  You are an engineer in computer science.
+
+U: How to use xclip on Linux
+
+A: Xclip is a command-line utility for manipulating the clipboard in Linux. You can use it to copy and paste text between the command line and the system clipboard. Here are some common use cases:
 
 - Copying the content of a file to the clipboard:
   ```
