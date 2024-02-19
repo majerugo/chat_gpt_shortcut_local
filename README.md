@@ -50,13 +50,13 @@ sudo python chat_gpt_shortcut.py
 
 Select some text **ctrl + c** and press the shortcut **ctrl + alt + a** to send the text to the gpt3 engine.
 
-Select some text **ctrl + c** and press the shortcut **ctrl + shift + t** to translate the text with the gpt3 engine.
+Select some text **ctrl + c** and press the shortcut **ctrl + shift + t** to translate the text with the gpt3 engine. (Not implemented yet)
 
-Select some text **ctrl + c** and press the shortcut **ctrl + alt + e** to ask the gpt3 engine to explain the text.
+Select some text **ctrl + c** and press the shortcut **ctrl + alt + e** to ask the gpt3 engine to explain the text. (Not implemented yet)
 
-Select some text **ctrl + c** and press the shortcut **ctrl + alt + s** to summarize the text with the gpt3 engine.
+Select some text **ctrl + c** and press the shortcut **ctrl + alt + s** to summarize the text with the gpt3 engine. (Not implemented yet)
 
-Select some text **ctrl + c** and press the shortcut **ctrl + alt + r** to rewrite the text with the gpt3 engine.
+Select some text **ctrl + c** and press the shortcut **ctrl + alt + r** to rewrite the text with the gpt3 engine. (Not implemented yet)
 
 To leave the program you can press **esc**.
 
